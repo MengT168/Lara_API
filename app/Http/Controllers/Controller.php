@@ -22,4 +22,11 @@ abstract class Controller
     {
         return Carbon::now('Asia/Phnom_Penh');
     }
+
+    public function uploadFile($File) {
+        $fileName  = rand(1,999).'-'.$File->getClientOriginalName();
+        $path      = 'uploads';
+        $File->move($path, $fileName);
+        return $fileName;
+    }
 }
