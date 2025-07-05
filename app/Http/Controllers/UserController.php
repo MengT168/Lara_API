@@ -110,4 +110,8 @@ class UserController extends Controller
         $users = User::all();
         echo $users;
     }
+
+    public function currentUser(){
+       return Auth::user();
+    }
 }
