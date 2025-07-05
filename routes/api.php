@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\UserController;
 use App\Models\Category;
@@ -20,4 +21,7 @@ Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
     Route::post('/admin/add-category',[CategoryController::class,'addCategorySubmit']);
     Route::put('/admin/category/update/{id}', [CategoryController::class, 'updateCategorySubmit']);
     Route::delete('/admin/category/delete/{id}', [CategoryController::class, 'deleteCategory']);
+
+    Route::post('/admin/add-attribute-submit',   [AttributeController::class, 'addAttributeSubmit']);
+    Route::get('/admin/list-attribute',[AttributeController::class,'listAttribute']);
 });
