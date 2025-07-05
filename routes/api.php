@@ -24,4 +24,7 @@ Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
 
     Route::post('/admin/add-attribute-submit',   [AttributeController::class, 'addAttributeSubmit']);
     Route::get('/admin/list-attribute',[AttributeController::class,'listAttribute']);
+    Route::put('/admin/attribute/update/{id}', [AttributeController::class, 'updateAttribute']);
+    Route::delete('/admin/attribute/delete/{id}', [AttributeController::class, 'deleteAttribute']);
+
 });
