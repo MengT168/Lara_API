@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
          $middleware->alias([
             'auth' => Authenticate::class,
             'auth:sanctum' => \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            'cors'  => App\Http\Middleware\Cors::class, 
             'is_admin' => AdminMiddleware::class,
         ]);
     })

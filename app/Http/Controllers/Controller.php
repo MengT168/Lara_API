@@ -26,7 +26,7 @@ abstract class Controller
     public function uploadFile($File) {
         $fileName  = rand(1,999).'-'.$File->getClientOriginalName();
         $path      = 'uploads';
-        $File->move($path, $fileName);
+        $File->move(public_path($path), $fileName);
         return $fileName;
     }
 }

@@ -11,26 +11,27 @@ use Illuminate\Validation\Rules;
 
 class UserController extends Controller
 {
-       public function register(Request $request){
-        $validator = Validator::make($request->all(),[
-            'name'=> 'required|max:191',
-            'email'=> 'required|email|max:191',
-            'password'=> 'required|max:191',
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|max:191',
+            'email' => 'required|email|max:191',
+            'password' => 'required|max:191',
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json([
-                'status'=>422,
+                'status' => 422,
                 'error' => $validator->messages()
-            ],422);
-        }else{
-            $registerCheck = User::where('email',$request->email)->orWhere('name',$request->name)->get();
-            if(count($registerCheck)!=0){
+            ], 422);
+        } else {
+            $registerCheck = User::where('email', $request->email)->orWhere('name', $request->name)->get();
+            if (count($registerCheck) != 0) {
                 return response()->json([
                     'status' => 409,
                     'Message'   => "User already exists"
                 ], 409);
-            }else{
+            } else {
                 $adminExists = User::where('is_admin', 1)->exists();
                 $is_admin = $adminExists ? 0 : 1;
                 $register = User::insert([
@@ -38,32 +39,32 @@ class UserController extends Controller
                     'email'     => $request->email,
                     'password'  => Hash::make($request->password),
                     'is_admin'    => $is_admin,
-                     'created_at' => date('Y-m-d H:i:s', strtotime('+7 hours')),
+                    'created_at' => date('Y-m-d H:i:s', strtotime('+7 hours')),
                     'updated_at' => date('Y-m-d H:i:s', strtotime('+7 hours')),
                 ]);
-                if($register){
+                if ($register) {
                     return response()->json([
                         'status' => 200,
                         'Message' => "Register Successful"
                     ]);
-                }else{
+                } else {
                     return response()->json([
                         'status' => 500,
                         'Message' => "Register fail"
                     ]);
                 }
             }
-            
         }
     }
 
-     public function loginSubmit(Request $request){
-            $validator = Validator::make($request->all(),[
+    public function loginSubmit(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
             'name' => 'required|max:191',
             'password' => 'required|max:191',
         ]);
-    
-        if($validator->fails()){
+
+        if ($validator->fails()) {
             return response()->json([
                 'status' => 422,
                 'error' => $validator->messages()
@@ -71,27 +72,26 @@ class UserController extends Controller
         } else {
             if (Auth::attempt(['name' => $request->name, 'password' => $request->password])) {
                 if (Auth::user()->is_admin === 1) {
-                    $token= Auth::user()->createToken('auth-token')->plainTextToken;
+                    $token = Auth::user()->createToken('auth-token')->plainTextToken;
                     $username = Auth()->user()->name;
                     return response()->json([
                         'status' => 200,
                         'username'  => $username,
                         'Message' => 'Login Successful',
-                        'access_token' => $token
+                        'access_token' => $token,
+                        'is_admin' => Auth()->user()->is_admin
                     ], 200);
-                } 
-                
-                elseif(Auth::user()->is_admin === 0){
-                    $token= Auth::user()->createToken('auth-token')->plainTextToken;
+                } elseif (Auth::user()->is_admin === 0) {
+                    $token = Auth::user()->createToken('auth-token')->plainTextToken;
                     $username = Auth()->user()->name;
                     return response()->json([
                         'status' => 200,
                         'username'  => $username,
                         'Message' => 'Login Successful',
-                        'access_token' => $token
+                        'access_token' => $token,
+                        'is_admin' => Auth()->user()->is_admin
                     ], 200);
-                }
-                else {
+                } else {
                     Auth::logout();
                     return response()->json([
                         'status' => 403,
@@ -106,12 +106,14 @@ class UserController extends Controller
             }
         }
     }
-    public function getUser(){       
+    public function getUser()
+    {
         $users = User::all();
         echo $users;
     }
 
-    public function currentUser(){
-       return Auth::user();
+    public function currentUser()
+    {
+        return Auth::user();
     }
 }
