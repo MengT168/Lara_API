@@ -18,4 +18,9 @@ class Attribute extends Model
         'type',
         'value',
     ];
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'attribute_product');
+    }
 }

@@ -29,4 +29,30 @@ abstract class Controller
         $File->move(public_path($path), $fileName);
         return $fileName;
     }
+
+    public function transformProducts($products)
+{
+    return $products->map(function ($product) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'thumbnail' => $product->thumbnail,
+            'thumbnail_url' => asset('storage/uploads/' . $product->thumbnail),
+            'regular_price' => $product->regular_price,
+            'sale_price' => $product->sale_price,
+            'viewer' => $product->viewer,
+            'attributes' => $product->attributes->groupBy('type')->map(function ($items) {
+                return $items->map(function ($attr) {
+                    return [
+                        'id' => $attr->id,
+                        'value' => $attr->value,
+                    ];
+                })->values();
+            }),
+        ];
+    });
+}
+
+
 }

@@ -1,0 +1,246 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+
+class ProductController extends Controller
+{
+
+    public function transformProduct($product)
+    {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'thumbnail' => $product->thumbnail,
+            'thumbnail_url' => $product->thumbnail ? Storage::url($product->thumbnail) : null,
+            'regular_price' => $product->regular_price,
+            'sale_price' => $product->sale_price,
+            'viewer' => $product->viewer,
+            'description' => $product->description,
+            'attributes' => $product->attributes->groupBy('type')->map(function ($items) {
+                return $items->map(function ($attr) {
+                    return [
+                        'id' => $attr->id,
+                        'value' => $attr->value,
+                    ];
+                })->values();
+            }),
+        ];
+    }
+
+    public function transformProducts($products)
+    {
+        return $products->map(function ($product) {
+            return $this->transformProduct($product);
+        })->values();
+    }
+
+    public function addProductSubmit(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:191',
+            'qty' => 'required|integer|min:0',
+            'regular_price' => 'required|numeric',
+            'sale_price' => 'required|numeric',
+            'size' => 'required|array',
+            'color' => 'required|array',
+            'category' => 'required|integer|exists:category,id',
+            'thumbnail' => 'nullable|image|max:2048',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 422, 'error' => $validator->errors()], 422);
+        }
+
+        try {
+            $fileName = null;
+            if ($request->hasFile('thumbnail')) {
+                $fileName = $request->file('thumbnail')->store('', 'public');
+            }
+
+            $product = Product::create([
+                'name' => $request->name,
+                'slug' => $this->slug($request->name),
+                'quantity' => $request->qty,
+                'regular_price' => $request->regular_price,
+                'sale_price' => $request->sale_price,
+                'category' => $request->category,
+                'thumbnail' => $fileName,
+                'author' => Auth::id(),
+                'description' => $request->description,
+            ]);
+
+            $attributeIds = array_merge($request->size ?? [], $request->color ?? []);
+            $product->attributes()->attach($attributeIds);
+
+            return response()->json(['status' => 200, 'message' => 'Product created successfully', 'data' => $product], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'Product creation failed',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function listProduct()
+    {
+        $products = Product::with('attributes')->latest()->get();
+        $products->transform(function ($product) {
+            if ($product->thumbnail) {
+                $product->thumbnail_url = Storage::url($product->thumbnail);
+            } else {
+                $product->thumbnail_url = null;
+            }
+            return $product;
+        });
+
+
+        $data = $products->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'quantity' => $product->quantity,
+                'regular_price' => $product->regular_price,
+                'sale_price' => $product->sale_price,
+                'category' => $product->category,
+                'thumbnail' => $product->thumbnail,
+                'thumbnail_url' => asset('storage/uploads/' . $product->thumbnail),
+                'viewer' => $product->viewer,
+                'author' => $product->author,
+                'description' => $product->description,
+                'created_at' => $product->created_at,
+                'updated_at' => $product->updated_at,
+                'attributes' => $product->attributes->groupBy('type')->map(function ($items) {
+                    return $items->map(function ($attr) {
+                        return [
+                            'id' => $attr->id,
+                            'value' => $attr->value,
+                        ];
+                    })->values();
+                })
+            ];
+        });
+
+        return response()->json([
+            'status' => 200,
+            'data' => $data
+        ]);
+    }
+
+    public function updateProductSubmit(Request $request, $id)
+    {
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:191',
+            'qty' => 'sometimes|required|integer|min:0',
+            'regular_price' => 'sometimes|required|numeric',
+            'sale_price' => 'sometimes|required|numeric',
+            'category' => 'sometimes|required|integer|exists:category,id',
+            'size' => 'sometimes|array',
+            'color' => 'sometimes|array',
+            'thumbnail' => 'nullable|image|max:2048',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 422, 'error' => $validator->errors()], 422);
+        }
+
+        if ($request->hasFile('thumbnail')) {
+            $file = $request->file('thumbnail');
+            $fileName = rand(1, 999) . '-' . $file->getClientOriginalName();
+            $file->storeAs('public/uploads', $fileName);
+            $product->thumbnail = $fileName;
+        }
+
+        $product->name = $request->name ?? $product->name;
+        $product->slug = $this->slug($product->name);
+        $product->quantity = $request->qty ?? $product->quantity;
+        $product->regular_price = $request->regular_price ?? $product->regular_price;
+        $product->sale_price = $request->sale_price ?? $product->sale_price;
+        $product->category = $request->category ?? $product->category;
+        $product->description = $request->description ?? $product->description;
+        $product->updated_at = now();
+        $product->save();
+
+        if ($request->has('size') || $request->has('color')) {
+            $attributeIds = array_merge($request->size ?? [], $request->color ?? []);
+            $product->attributes()->sync($attributeIds);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Product updated successfully',
+            'data' => $product
+        ]);
+    }
+
+    public function deleteProduct($id)
+    {
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        $product->attributes()->detach();
+
+        if ($product->thumbnail && Storage::exists('public/uploads/' . $product->thumbnail)) {
+            Storage::delete('public/uploads/' . $product->thumbnail);
+        }
+
+        $product->delete();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Product deleted successfully'
+        ]);
+    }
+
+    public function productDetail($slug)
+    {
+        $product = Product::with('attributes')->where('slug', $slug)->first();
+
+        if (!$product) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        $product->increment('viewer');
+
+        $related = Product::with('attributes')
+            ->where('category', $product->category)
+            ->where('id', '<>', $product->id)
+            ->orderByDesc('id')
+            ->limit(4)
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'product' => $this->transformProduct($product),
+            'related_products' => $this->transformProducts($related),
+        ]);
+    }
+}
