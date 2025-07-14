@@ -41,55 +41,123 @@ class ProductController extends Controller
         })->values();
     }
 
+    // public function addProductSubmit(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'name' => 'required|string|max:191',
+    //         'qty' => 'required|integer|min:0',
+    //         'regular_price' => 'required|numeric',
+    //         'sale_price' => 'required|numeric',
+    //         'size' => 'required|array',
+    //         'color' => 'required|array',
+    //         'category' => 'required|integer|exists:category,id',
+    //         'thumbnail' => 'nullable|image|max:2048',
+    //         'description' => 'nullable|string',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['status' => 422, 'error' => $validator->errors()], 422);
+    //     }
+
+    //     try {
+    //         $fileName = null;
+    //         if ($request->hasFile('thumbnail')) {
+    //             $fileName = $request->file('thumbnail')->store('', 'public');
+    //         }
+
+    //         $product = Product::create([
+    //             'name' => $request->name,
+    //             'slug' => $this->slug($request->name),
+    //             'quantity' => $request->qty,
+    //             'regular_price' => $request->regular_price,
+    //             'sale_price' => $request->sale_price,
+    //             'category' => $request->category,
+    //             'thumbnail' => $fileName,
+    //             'author' => Auth::id(),
+    //             'description' => $request->description,
+    //         ]);
+
+    //         $attributeIds = array_merge($request->size ?? [], $request->color ?? []);
+    //         $product->attributes()->attach($attributeIds);
+
+    //         return response()->json(['status' => 200, 'message' => 'Product created successfully', 'data' => $product], 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'status' => 500,
+    //             'message' => 'Product creation failed',
+    //             'error' => $e->getMessage()
+    //         ]);
+    //     }
+    // }
+
+    
+    
     public function addProductSubmit(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:191',
-            'qty' => 'required|integer|min:0',
-            'regular_price' => 'required|numeric',
-            'sale_price' => 'required|numeric',
-            'size' => 'required|array',
-            'color' => 'required|array',
-            'category' => 'required|integer|exists:category,id',
-            'thumbnail' => 'nullable|image|max:2048',
-            'description' => 'nullable|string',
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:191',
+        'qty' => 'required|integer|min:0',
+        'regular_price' => 'required|numeric',
+        'sale_price' => 'required|numeric',
+        'size' => 'required|array',
+        'color' => 'required|array',
+        'category' => 'required|integer|exists:category,id',
+        'thumbnail' => 'nullable|image|max:2048',
+        'description' => 'nullable|string',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['status' => 422, 'error' => $validator->errors()], 422);
-        }
-
-        try {
-            $fileName = null;
-            if ($request->hasFile('thumbnail')) {
-                $fileName = $request->file('thumbnail')->store('', 'public');
-            }
-
-            $product = Product::create([
-                'name' => $request->name,
-                'slug' => $this->slug($request->name),
-                'quantity' => $request->qty,
-                'regular_price' => $request->regular_price,
-                'sale_price' => $request->sale_price,
-                'category' => $request->category,
-                'thumbnail' => $fileName,
-                'author' => Auth::id(),
-                'description' => $request->description,
-            ]);
-
-            $attributeIds = array_merge($request->size ?? [], $request->color ?? []);
-            $product->attributes()->attach($attributeIds);
-
-            return response()->json(['status' => 200, 'message' => 'Product created successfully', 'data' => $product], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 500,
-                'message' => 'Product creation failed',
-                'error' => $e->getMessage()
-            ]);
-        }
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'error' => $validator->errors()
+        ], 422);
     }
 
+    try {
+        $fileName = null;
+        if ($request->hasFile('thumbnail')) {
+            $file = $request->file('thumbnail');
+
+            // Generate filename: timestamp + original name
+            $fileName = time() . '_' . $file->getClientOriginalName();
+
+            $uploadPath = public_path('uploads');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            $file->move($uploadPath, $fileName);
+        }
+
+        $product = Product::create([
+            'name' => $request->name,
+            'slug' => $this->slug($request->name), // You must have slug() method
+            'quantity' => $request->qty,
+            'regular_price' => $request->regular_price,
+            'sale_price' => $request->sale_price,
+            'category' => $request->category,
+            'thumbnail' => $fileName, // Only filename saved
+            'author' => Auth::id(),
+            'description' => $request->description,
+        ]);
+
+        $attributeIds = array_merge($request->size ?? [], $request->color ?? []);
+        $product->attributes()->attach($attributeIds);
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Product created successfully',
+            'data' => $product
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 500,
+            'message' => 'Product creation failed',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
     public function listProduct()
     {
         $products = Product::with('attributes')->latest()->get();

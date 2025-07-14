@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\AttributeController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LogoController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\Cors;
@@ -21,8 +23,16 @@ Route::post('/loginSubmit', [UserController::class, 'loginSubmit'])->name('login
 Route::get('/products/detail/{slug}', [ProductController::class, 'productDetail']);
 
 
+
+
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [HomeController::class, 'currentUser']);
+    Route::post('/cart/add', [CartController::class, 'addCart']);
+    Route::get('/cart/items', [CartController::class, 'cartItems']);
+    Route::get('/checkout', [OrderController::class, 'checkOutApi']);
+    Route::get('/cart-item/{id}', [CartController::class, 'removeCartItemApi']);
+    Route::post('/place-order', [OrderController::class, 'placeOrderApi']);
 });
 
 Route::middleware(['auth:sanctum', 'is_admin', Cors::class])->group(function () {

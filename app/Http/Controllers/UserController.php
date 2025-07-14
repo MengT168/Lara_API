@@ -106,7 +106,12 @@ class UserController extends Controller
             }
         }
     }
-    public function getUser()
+
+    
+
+
+
+public function getUser()
     {
         $users = User::all();
         echo $users;
