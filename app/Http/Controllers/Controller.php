@@ -38,7 +38,7 @@ abstract class Controller
             'name' => $product->name,
             'slug' => $product->slug,
             'thumbnail' => $product->thumbnail,
-            'thumbnail_url' => asset('storage/uploads/' . $product->thumbnail),
+            'thumbnail_url' => route('serve.image', ['filename' => $product->thumbnail]),
             'regular_price' => $product->regular_price,
             'sale_price' => $product->sale_price,
             'viewer' => $product->viewer,

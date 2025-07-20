@@ -10,6 +10,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\Cors;
 use App\Models\Category;
+use Illuminate\Http\Middleware\HandleCors;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -35,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/place-order', [OrderController::class, 'placeOrderApi']);
 });
 
-Route::middleware(['auth:sanctum', 'is_admin', Cors::class])->group(function () {
+Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
     Route::get('/current-user', [UserController::class, 'currentUser']);
     Route::get('/get-user', [UserController::class, 'getUser']);
 
@@ -59,4 +60,6 @@ Route::middleware(['auth:sanctum', 'is_admin', Cors::class])->group(function () 
     Route::get('/admin/list-product', [ProductController::class, 'listProduct']);
     Route::patch('/admin/product/update/{id}', [ProductController::class, 'updateProductSubmit']);
     Route::delete('/admin/product/delete/{id}', [ProductController::class, 'deleteProduct']);
+
+   
 });

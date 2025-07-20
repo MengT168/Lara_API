@@ -18,7 +18,7 @@ class ProductController extends Controller
             'name' => $product->name,
             'slug' => $product->slug,
             'thumbnail' => $product->thumbnail,
-            'thumbnail_url' => $product->thumbnail ? Storage::url($product->thumbnail) : null,
+            'thumbnail_url' => route('serve.image', ['filename' => $product->thumbnail]),
             'regular_price' => $product->regular_price,
             'sale_price' => $product->sale_price,
             'viewer' => $product->viewer,
@@ -92,29 +92,95 @@ class ProductController extends Controller
 
     
     
-    public function addProductSubmit(Request $request)
+//     public function addProductSubmit(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'name' => 'required|string|max:191',
+//         'qty' => 'required|integer|min:0',
+//         'regular_price' => 'required|numeric',
+//         'sale_price' => 'required|numeric',
+//         'size' => 'required|array',
+//         'color' => 'required|array',
+//         'category' => 'required|integer|exists:category,id',
+//         'thumbnail' => 'nullable|image|max:2048',
+//         'description' => 'nullable|string',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status' => 422,
+//             'error' => $validator->errors()
+//         ], 422);
+//     }
+
+//     try {
+//         $fileName = null;
+//         if ($request->hasFile('thumbnail')) {
+//             $file = $request->file('thumbnail');
+
+//             // Generate filename: timestamp + original name
+//             $fileName = time() . '_' . $file->getClientOriginalName();
+
+//             $uploadPath = public_path('uploads');
+//             if (!file_exists($uploadPath)) {
+//                 mkdir($uploadPath, 0755, true);
+//             }
+
+//             $file->move($uploadPath, $fileName);
+//         }
+
+//         $product = Product::create([
+//             'name' => $request->name,
+//             'slug' => $this->slug($request->name), // You must have slug() method
+//             'quantity' => $request->qty,
+//             'regular_price' => $request->regular_price,
+//             'sale_price' => $request->sale_price,
+//             'category' => $request->category,
+//             'thumbnail' => $fileName, // Only filename saved
+//             'author' => Auth::id(),
+//             'description' => $request->description,
+//         ]);
+
+//         $attributeIds = array_merge($request->size ?? [], $request->color ?? []);
+//         $product->attributes()->attach($attributeIds);
+
+//         return response()->json([
+//             'status' => 200,
+//             'message' => 'Product created successfully',
+//             'data' => $product
+//         ], 200);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'status' => 500,
+//             'message' => 'Product creation failed',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+public function addProductSubmit(Request $request)
 {
+    // 1. Validate the incoming data.
+    // Note: 'size' and 'color' are now strings because Flutter sends them as JSON.
     $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:191',
         'qty' => 'required|integer|min:0',
         'regular_price' => 'required|numeric',
         'sale_price' => 'required|numeric',
-        'size' => 'required|array',
-        'color' => 'required|array',
+        'size' => 'required|string',
+        'color' => 'required|string',
         'category' => 'required|integer|exists:category,id',
         'thumbnail' => 'nullable|image|max:2048',
         'description' => 'nullable|string',
     ]);
 
     if ($validator->fails()) {
-        return response()->json([
-            'status' => 422,
-            'error' => $validator->errors()
-        ], 422);
+        return response()->json(['status' => 422, 'error' => $validator->errors()], 422);
     }
 
     try {
-        $fileName = null;
+       $fileName = null;
         if ($request->hasFile('thumbnail')) {
             $file = $request->file('thumbnail');
 
@@ -131,25 +197,31 @@ class ProductController extends Controller
 
         $product = Product::create([
             'name' => $request->name,
-            'slug' => $this->slug($request->name), // You must have slug() method
+            'slug' => \Str::slug($request->name),
             'quantity' => $request->qty,
             'regular_price' => $request->regular_price,
             'sale_price' => $request->sale_price,
             'category' => $request->category,
-            'thumbnail' => $fileName, // Only filename saved
+            'thumbnail' => $fileName,
             'author' => Auth::id(),
             'description' => $request->description,
         ]);
 
-        $attributeIds = array_merge($request->size ?? [], $request->color ?? []);
-        $product->attributes()->attach($attributeIds);
+        // 3. Decode the JSON strings from Flutter back into PHP arrays.
+        $sizeIds = json_decode($request->size, true) ?? [];
+        $colorIds = json_decode($request->color, true) ?? [];
+
+        // 4. Merge and attach the attribute IDs to the product.
+        $attributeIds = array_merge($sizeIds, $colorIds);
+        if (!empty($attributeIds)) {
+            $product->attributes()->attach($attributeIds);
+        }
 
         return response()->json([
             'status' => 200,
             'message' => 'Product created successfully',
             'data' => $product
         ], 200);
-
     } catch (\Exception $e) {
         return response()->json([
             'status' => 500,
@@ -158,52 +230,93 @@ class ProductController extends Controller
         ], 500);
     }
 }
+    // public function listProduct()
+    // {
+    //     $products = Product::with('attributes')->latest()->get();
+    //     $products->transform(function ($product) {
+    //         if ($product->thumbnail) {
+    //             $product->thumbnail_url = Storage::url($product->thumbnail);
+    //         } else {
+    //             $product->thumbnail_url = null;
+    //         }
+    //         return $product;
+    //     });
+
+
+    //     $data = $products->map(function ($product) {
+    //         return [
+    //             'id' => $product->id,
+    //             'name' => $product->name,
+    //             'slug' => $product->slug,
+    //             'quantity' => $product->quantity,
+    //             'regular_price' => $product->regular_price,
+    //             'sale_price' => $product->sale_price,
+    //             'category' => $product->category,
+    //             'thumbnail' => $product->thumbnail,
+    //             'thumbnail_url' => asset('storage/uploads/' . $product->thumbnail),
+    //             'viewer' => $product->viewer,
+    //             'author' => $product->author,
+    //             'description' => $product->description,
+    //             'created_at' => $product->created_at,
+    //             'updated_at' => $product->updated_at,
+    //             'attributes' => $product->attributes->groupBy('type')->map(function ($items) {
+    //                 return $items->map(function ($attr) {
+    //                     return [
+    //                         'id' => $attr->id,
+    //                         'value' => $attr->value,
+    //                     ];
+    //                 })->values();
+    //             })
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'status' => 200,
+    //         'data' => $data
+    //     ]);
+    // }
+
+    
+
     public function listProduct()
-    {
-        $products = Product::with('attributes')->latest()->get();
-        $products->transform(function ($product) {
-            if ($product->thumbnail) {
-                $product->thumbnail_url = Storage::url($product->thumbnail);
-            } else {
-                $product->thumbnail_url = null;
-            }
-            return $product;
-        });
+{
+    $products = Product::with('attributes')->latest()->get();
 
+    $data = $products->map(function ($product) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'quantity' => $product->quantity,
+            'regular_price' => $product->regular_price,
+            'sale_price' => $product->sale_price,
+            'category' => $product->category,
+            'thumbnail' => $product->thumbnail,
+            // 'thumbnail_url' => asset('uploads/' . $product->thumbnail), 
+            'thumbnail_url' => route('serve.image', ['filename' => $product->thumbnail]),
+            'viewer' => $product->viewer,
+            'author' => $product->author,
+            'description' => $product->description,
+            'created_at' => $product->created_at,
+            'updated_at' => $product->updated_at,
+            'attributes' => $product->attributes->groupBy('type')->map(function ($items) {
+                return $items->map(function ($attr) {
+                    return [
+                        'id' => $attr->id,
+                        'value' => $attr->value,
+                    ];
+                })->values();
+            })
+        ];
+    });
 
-        $data = $products->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'slug' => $product->slug,
-                'quantity' => $product->quantity,
-                'regular_price' => $product->regular_price,
-                'sale_price' => $product->sale_price,
-                'category' => $product->category,
-                'thumbnail' => $product->thumbnail,
-                'thumbnail_url' => asset('storage/uploads/' . $product->thumbnail),
-                'viewer' => $product->viewer,
-                'author' => $product->author,
-                'description' => $product->description,
-                'created_at' => $product->created_at,
-                'updated_at' => $product->updated_at,
-                'attributes' => $product->attributes->groupBy('type')->map(function ($items) {
-                    return $items->map(function ($attr) {
-                        return [
-                            'id' => $attr->id,
-                            'value' => $attr->value,
-                        ];
-                    })->values();
-                })
-            ];
-        });
+    return response()->json([
+        'status' => 200,
+        'data' => $data
+    ]);
+}
 
-        return response()->json([
-            'status' => 200,
-            'data' => $data
-        ]);
-    }
-
+    
     public function updateProductSubmit(Request $request, $id)
     {
         $product = Product::find($id);
