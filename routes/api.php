@@ -34,6 +34,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/checkout', [OrderController::class, 'checkOutApi']);
     Route::get('/cart-item/{id}', [CartController::class, 'removeCartItemApi']);
     Route::post('/place-order', [OrderController::class, 'placeOrderApi']);
+    Route::get('/my-orders', [OrderController::class, 'myOrder']);
+    Route::post('/cancel-order/{id}', [OrderController::class, 'cancelOrder']);
 });
 
 Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
@@ -60,6 +62,4 @@ Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
     Route::get('/admin/list-product', [ProductController::class, 'listProduct']);
     Route::patch('/admin/product/update/{id}', [ProductController::class, 'updateProductSubmit']);
     Route::delete('/admin/product/delete/{id}', [ProductController::class, 'deleteProduct']);
-
-   
 });

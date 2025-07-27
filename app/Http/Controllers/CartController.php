@@ -92,7 +92,7 @@ class CartController extends Controller
                 'product_id'   => $item->product->id,
                 'product_name' => $item->product->name,
                 'thumbnail'    => $item->product->thumbnail,
-                'thumbnail_url' => $item->product->thumbnail ? Storage::url($item->product->thumbnail) : null,
+                'thumbnail_url' => route('serve.image', ['filename' =>  $item->product->thumbnail]),
                 'regular_price' => $item->product->regular_price,
                 'sale_price'   => $item->product->sale_price,
                 'price'        => $item->price,
@@ -112,7 +112,6 @@ class CartController extends Controller
 
     public function removeCartItemApi($id)
     {
-        // Step 1: Check if user is logged in
         $user = auth()->user();
         if (!$user) {
             return response()->json([
@@ -121,7 +120,6 @@ class CartController extends Controller
             ], 401);
         }
 
-        // Step 2: Find cart item by ID
         $cartItem = CartItem::find($id);
         if (!$cartItem) {
             return response()->json([
@@ -130,7 +128,6 @@ class CartController extends Controller
             ], 404);
         }
 
-        // Step 3: Load related cart
         $cart = Cart::find($cartItem->cart_id);
         if (!$cart) {
             return response()->json([
@@ -139,7 +136,6 @@ class CartController extends Controller
             ], 404);
         }
 
-        // Step 4: Check if this cart belongs to current user
         if ($cart->user_id !== $user->id) {
             return response()->json([
                 'status' => 403,
@@ -147,10 +143,8 @@ class CartController extends Controller
             ], 403);
         }
 
-        // Step 5: Delete the cart item
         $cartItem->delete();
 
-        // Step 6: Recalculate cart total safely
         $cartItems = $cart->cartItems;
         $totalAmount = 0;
         if ($cartItems && $cartItems->count() > 0) {
@@ -159,12 +153,10 @@ class CartController extends Controller
             });
         }
 
-        // Step 7: Update cart
         $cart->total_amount = $totalAmount;
         $cart->updated_at = now();
         $cart->save();
 
-        // Step 8: Return response
         return response()->json([
             'status' => 200,
             'message' => 'Cart item removed successfully.',

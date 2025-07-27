@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -31,7 +33,7 @@ class OrderController extends Controller
                 'product_id'   => $item->product_id,
                 'product_name' => $item->product->name,
                 'thumbnail'    => $item->product->thumbnail,
-                 'thumbnail_url' => $item->product->thumbnail ? Storage::url($item->product->thumbnail) : null,
+                'thumbnail_url' => $item->product->thumbnail ? Storage::url($item->product->thumbnail) : null,
                 'price'        => $item->price,
                 'quantity'     => $item->quantity,
                 'total'        => $item->price * $item->quantity,
@@ -133,5 +135,46 @@ class OrderController extends Controller
                 'error' => $e->getMessage()
             ]);
         }
+    }
+
+    public function myOrder()
+    {
+        $userId = Auth::id();
+
+        $orders = Order::where('user_id', $userId)
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json([
+            'status' => 200,
+            'data' => $orders
+        ]);
+    }
+
+    public function cancelOrder($id)
+    {
+        $order = Order::find($id);
+
+        if (!$order) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Order not found'
+            ], 404);
+        }
+
+        $order->status = 'cancel';
+        $order->save();
+
+        $orderItems = OrderItem::where('order_id', $id)->get();
+
+        foreach ($orderItems as $item) {
+            Product::where('id', $item->product_id)
+                ->increment('quantity', $item->quantity);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Order canceled successfully'
+        ]);
     }
 }
