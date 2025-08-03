@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LogoController;
 use App\Http\Controllers\OrderController;
@@ -22,7 +23,7 @@ Route::get('/home', [HomeController::class, 'home']);
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/loginSubmit', [UserController::class, 'loginSubmit'])->name('login');
 Route::get('/products/detail/{slug}', [ProductController::class, 'productDetail']);
-
+Route::get('/products/search', [ProductController::class, 'searchProducts']);
 
 
 
@@ -36,6 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/place-order', [OrderController::class, 'placeOrderApi']);
     Route::get('/my-orders', [OrderController::class, 'myOrder']);
     Route::post('/cancel-order/{id}', [OrderController::class, 'cancelOrder']);
+
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::post('/favorites/toggle', [FavoriteController::class, 'toggle']);
+
+    Route::post('/cart-item/increase/{id}', [CartController::class, 'increaseQuantity']);
+    Route::post('/cart-item/decrease/{id}', [CartController::class, 'decreaseQuantity']);
 });
 
 Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {

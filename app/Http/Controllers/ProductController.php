@@ -424,4 +424,22 @@ public function addProductSubmit(Request $request)
             'related_products' => $this->transformProducts($related),
         ]);
     }
+
+     public function searchProducts(Request $request)
+    {
+        $request->validate(['q' => 'required|string']);
+        $searchTerm = $request->q;
+
+        $products = Product::where('name', 'LIKE', '%' . $searchTerm . '%')
+                           ->with('attributes')
+                           ->latest()
+                           ->get();
+
+        $products->transform(function ($product) {
+            $product->thumbnail_url = route('serve.image', ['filename' => $product->thumbnail]);
+            return $product;
+        });
+
+        return response()->json(['status' => 200, 'data' => $products]);
+    }
 }

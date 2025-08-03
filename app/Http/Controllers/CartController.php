@@ -165,4 +165,43 @@ class CartController extends Controller
             'cart_empty' => $cartItems ? $cartItems->count() === 0 : true
         ]);
     }
+
+      public function increaseQuantity($id)
+    {
+        return $this->updateQuantity($id, 1);
+    }
+
+    public function decreaseQuantity($id)
+    {
+        return $this->updateQuantity($id, -1);
+    }
+
+    private function updateQuantity($cartItemId, $amount)
+    {
+        $userId = auth()->id();
+        $cartItem = CartItem::where('id', $cartItemId)
+                            ->whereHas('cart', function ($query) use ($userId) {
+                                $query->where('user_id', $userId);
+                            })
+                            ->first();
+
+        if (!$cartItem) {
+            return response()->json(['message' => 'Cart item not found'], 404);
+        }
+        
+        if ($cartItem->quantity + $amount < 1) {
+            return response()->json(['message' => 'Quantity cannot be less than 1'], 400);
+        }
+
+        $cartItem->quantity += $amount;
+        $cartItem->save();
+        
+        $cart = $cartItem->cart;
+        $cart->load('items');
+        $totalAmount = $cart->items->sum(fn($item) => $item->price * $item->quantity);
+        $cart->total_amount = $totalAmount;
+        $cart->save();
+
+        return response()->json(['status' => 200, 'message' => 'Quantity updated']);
+    }
 }
