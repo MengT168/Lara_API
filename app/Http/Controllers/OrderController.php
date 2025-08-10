@@ -102,8 +102,8 @@ class OrderController extends Controller
                     'updated_at' => now()
                 ];
 
-                Product::where('id', $cartItem->product_id)
-                    ->decrement('quantity', $cartItem->quantity);
+                // Product::where('id', $cartItem->product_id)
+                //     ->decrement('quantity', $cartItem->quantity);
             }
 
             OrderItem::insert($orderItems);

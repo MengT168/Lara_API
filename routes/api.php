@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccessUserController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
@@ -69,4 +70,8 @@ Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
     Route::get('/admin/list-product', [ProductController::class, 'listProduct']);
     Route::patch('/admin/product/update/{id}', [ProductController::class, 'updateProductSubmit']);
     Route::delete('/admin/product/delete/{id}', [ProductController::class, 'deleteProduct']);
+
+    Route::get('/admin/access-order/{id}',    [AccessUserController::class, 'accessSubmit']);
+    Route::get('/admin/list-order',[AccessUserController::class,'listOrder']);
+    Route::post('/admin/reject-order/{id}',[AccessUserController::class,'rejectOrder']);
 });
