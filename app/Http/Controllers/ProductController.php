@@ -292,7 +292,6 @@ public function addProductSubmit(Request $request)
             'sale_price' => $product->sale_price,
             'category' => $product->category,
             'thumbnail' => $product->thumbnail,
-            // 'thumbnail_url' => asset('uploads/' . $product->thumbnail), 
             'thumbnail_url' => route('serve.image', ['filename' => $product->thumbnail]),
             'viewer' => $product->viewer,
             'author' => $product->author,

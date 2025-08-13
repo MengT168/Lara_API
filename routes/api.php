@@ -4,6 +4,7 @@ use App\Http\Controllers\AccessUserController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\FacebookAuthController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LogoController;
@@ -26,7 +27,8 @@ Route::post('/loginSubmit', [UserController::class, 'loginSubmit'])->name('login
 Route::get('/products/detail/{slug}', [ProductController::class, 'productDetail']);
 Route::get('/products/search', [ProductController::class, 'searchProducts']);
 
-
+Route::get('/auth/facebook/redirect', [FacebookAuthController::class, 'redirect']);
+Route::get('/auth/facebook/callback', [FacebookAuthController::class, 'callback']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
