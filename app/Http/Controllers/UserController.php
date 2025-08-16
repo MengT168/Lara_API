@@ -121,4 +121,15 @@ public function getUser()
     {
         return Auth::user();
     }
+
+    public function getAllUsers(){
+        $user = User::where('is_admin',0)->get();
+        $userCount = $user->count();
+        return response()->json([
+            'status' => 200,
+            'Message'   => 'Get All Users Successfull',
+            'data' => $user,
+            'countUser' => $userCount
+        ]);
+    }
 }

@@ -161,8 +161,6 @@ class ProductController extends Controller
 
 public function addProductSubmit(Request $request)
 {
-    // 1. Validate the incoming data.
-    // Note: 'size' and 'color' are now strings because Flutter sends them as JSON.
     $validator = Validator::make($request->all(), [
         'name' => 'required|string|max:191',
         'qty' => 'required|integer|min:0',
@@ -184,7 +182,6 @@ public function addProductSubmit(Request $request)
         if ($request->hasFile('thumbnail')) {
             $file = $request->file('thumbnail');
 
-            // Generate filename: timestamp + original name
             $fileName = time() . '_' . $file->getClientOriginalName();
 
             $uploadPath = public_path('uploads');
@@ -207,11 +204,9 @@ public function addProductSubmit(Request $request)
             'description' => $request->description,
         ]);
 
-        // 3. Decode the JSON strings from Flutter back into PHP arrays.
         $sizeIds = json_decode($request->size, true) ?? [];
         $colorIds = json_decode($request->color, true) ?? [];
 
-        // 4. Merge and attach the attribute IDs to the product.
         $attributeIds = array_merge($sizeIds, $colorIds);
         if (!empty($attributeIds)) {
             $product->attributes()->attach($attributeIds);
@@ -230,54 +225,7 @@ public function addProductSubmit(Request $request)
         ], 500);
     }
 }
-    // public function listProduct()
-    // {
-    //     $products = Product::with('attributes')->latest()->get();
-    //     $products->transform(function ($product) {
-    //         if ($product->thumbnail) {
-    //             $product->thumbnail_url = Storage::url($product->thumbnail);
-    //         } else {
-    //             $product->thumbnail_url = null;
-    //         }
-    //         return $product;
-    //     });
-
-
-    //     $data = $products->map(function ($product) {
-    //         return [
-    //             'id' => $product->id,
-    //             'name' => $product->name,
-    //             'slug' => $product->slug,
-    //             'quantity' => $product->quantity,
-    //             'regular_price' => $product->regular_price,
-    //             'sale_price' => $product->sale_price,
-    //             'category' => $product->category,
-    //             'thumbnail' => $product->thumbnail,
-    //             'thumbnail_url' => asset('storage/uploads/' . $product->thumbnail),
-    //             'viewer' => $product->viewer,
-    //             'author' => $product->author,
-    //             'description' => $product->description,
-    //             'created_at' => $product->created_at,
-    //             'updated_at' => $product->updated_at,
-    //             'attributes' => $product->attributes->groupBy('type')->map(function ($items) {
-    //                 return $items->map(function ($attr) {
-    //                     return [
-    //                         'id' => $attr->id,
-    //                         'value' => $attr->value,
-    //                     ];
-    //                 })->values();
-    //             })
-    //         ];
-    //     });
-
-    //     return response()->json([
-    //         'status' => 200,
-    //         'data' => $data
-    //     ]);
-    // }
-
-    
-
+   
     public function listProduct()
 {
     $products = Product::with('attributes')->latest()->get();

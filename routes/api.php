@@ -26,9 +26,12 @@ Route::post('/register', [UserController::class, 'register']);
 Route::post('/loginSubmit', [UserController::class, 'loginSubmit'])->name('login');
 Route::get('/products/detail/{slug}', [ProductController::class, 'productDetail']);
 Route::get('/products/search', [ProductController::class, 'searchProducts']);
+Route::get('get-logo',[LogoController::class,'getLogo']);
 
-Route::get('/auth/facebook/redirect', [FacebookAuthController::class, 'redirect']);
-Route::get('/auth/facebook/callback', [FacebookAuthController::class, 'callback']);
+Route::middleware('web')->group(function () {
+    Route::get('/auth/facebook/redirect', [FacebookAuthController::class, 'redirect']);
+    Route::get('/auth/facebook/callback', [FacebookAuthController::class, 'callback']);
+});
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -50,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
     Route::get('/current-user', [UserController::class, 'currentUser']);
+    Route::get('admin/all-users', [UserController::class, 'getAllUsers']);
     Route::get('/get-user', [UserController::class, 'getUser']);
 
     Route::get('/admin/list-category', [CategoryController::class, 'listCategory']);
@@ -75,5 +79,9 @@ Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
 
     Route::get('/admin/access-order/{id}',    [AccessUserController::class, 'accessSubmit']);
     Route::get('/admin/list-order',[AccessUserController::class,'listOrder']);
+    Route::get('/admin/list-all-complete-order',[AccessUserController::class,'listAllOrder']);
+    Route::get('/admin/total-earning',[AccessUserController::class,'totalEarning']);
     Route::post('/admin/reject-order/{id}',[AccessUserController::class,'rejectOrder']);
+
+
 });

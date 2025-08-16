@@ -115,4 +115,27 @@ class AccessUserController extends Controller
             ]);
         }
     }
+
+   public function listAllOrder()
+{
+    $orders = Order::with('items')->where('status', 'complete')->get(); // Changed from 'completed' to 'complete' to match your other statuses
+    $completeOrderCount = $orders->count();
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'Orders retrieved successfully',
+        'data' => $orders,
+        'complete_order_count' => $completeOrderCount 
+    ]);
+}
+
+    public function totalEarning(){
+        $totalCompleted = Order::where('status', 'complete')->sum('total_amount');
+        return response()->json([
+            'status' => 200,
+            'message' => 'Get Earning Success',
+            'data' => $totalCompleted
+        ]);
+    }
+
 }
