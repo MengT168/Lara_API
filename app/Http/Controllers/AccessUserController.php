@@ -118,7 +118,7 @@ class AccessUserController extends Controller
 
    public function listAllOrder()
 {
-    $orders = Order::with('items')->where('status', 'complete')->get(); // Changed from 'completed' to 'complete' to match your other statuses
+    $orders = Order::with('items')->where('status', 'complete')->get();
     $completeOrderCount = $orders->count();
 
     return response()->json([

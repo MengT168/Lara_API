@@ -74,7 +74,7 @@ Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
 
     Route::post('/admin/add-product-submit', [ProductController::class, 'addProductSubmit']);
     Route::get('/admin/list-product', [ProductController::class, 'listProduct']);
-    Route::patch('/admin/product/update/{id}', [ProductController::class, 'updateProductSubmit']);
+    Route::post('/admin/product/update/{id}', [ProductController::class, 'updateProductSubmit']);
     Route::delete('/admin/product/delete/{id}', [ProductController::class, 'deleteProduct']);
 
     Route::get('/admin/access-order/{id}',    [AccessUserController::class, 'accessSubmit']);
