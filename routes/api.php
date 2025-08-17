@@ -49,6 +49,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/cart-item/increase/{id}', [CartController::class, 'increaseQuantity']);
     Route::post('/cart-item/decrease/{id}', [CartController::class, 'decreaseQuantity']);
+
+    Route::get('/get-order-history',[OrderController::class,'orderHistory']);
 });
 
 Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
