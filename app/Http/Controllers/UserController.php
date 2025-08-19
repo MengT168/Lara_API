@@ -132,4 +132,50 @@ public function getUser()
             'countUser' => $userCount
         ]);
     }
+
+    public function updateUser(Request $request, $id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'User not found'
+            ]);
+        }
+
+        $user->name = $request->name ?? $user->name;
+        $user->email = $request->email ?? $user->email;
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'User updated successfully',
+            'data' => $user
+        ]);
+    }
+
+    public function deleteUser($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'User not found'
+            ]);
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'User deleted successfully'
+        ]);
+    }
 }

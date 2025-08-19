@@ -56,6 +56,8 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'is_admin'])->group(function () {
     Route::get('/current-user', [UserController::class, 'currentUser']);
     Route::get('admin/all-users', [UserController::class, 'getAllUsers']);
+    Route::put('admin/users/{id}', [UserController::class, 'updateUser']);
+    Route::delete('admin/users/{id}', [UserController::class, 'deleteUser']);
     Route::get('/get-user', [UserController::class, 'getUser']);
 
     Route::get('/admin/list-category', [CategoryController::class, 'listCategory']);
